@@ -1,0 +1,194 @@
+<!doctype html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="maximum-scale=1.0,minimum-scale=1.0,user-scalable=0,width=device-width,initial-scale=1.0" />
+    <meta name="format-detection" content="telephone=no,email=no,date=no,address=no">
+    <title>登录</title>
+    <link rel="stylesheet" type="text/css" href="./css/api.css" />
+    <link rel="stylesheet" type="text/css" href="./css/style.css" />
+    <style>
+        body {
+            font-size: 0;
+            min-height: 100%;
+        }
+
+        #wrap {
+            overflow: hidden;
+            display: flex;
+            font-weight: 100;
+            background-image: url(./image/login.png);
+            background-size: 100% 100%;
+            background-position: bottom;
+        }
+
+        .userPasswordWrap {
+            width: 70%;
+            height: 5rem;
+            margin: auto;
+        }
+
+        .userPasswordWrap>div {
+            width: 100%;
+            height: 2rem;
+            border-radius: 1rem;
+            margin: 1rem 0;
+            line-height: 2rem;
+        }
+
+        .userPasswordWrap>.userWrap {
+            border: 1px solid #fff;
+        }
+
+        .userPasswordWrap>.passwordWrap {
+            background: #381d8f;
+            color: #fff;
+            font-size: 1rem;
+            text-align: center;
+        }
+
+        .icon-phone {
+            display: inline-block;
+            height: 100%;
+            padding-left: .5rem;
+            white-space: nowrap;
+        }
+
+        .icon-phone img {
+            display: inline-block;
+            vertical-align: middle;
+            height: 60%;
+            position: relative;
+            top: -.15rem;
+            left: .25rem;
+        }
+
+        #phoneNumber {
+            height: 1rem;
+            padding: .2rem;
+            margin-left: .5rem;
+            color: #fff;
+            border: 0;
+            border-left: 1px solid rgba(255, 255, 255, 0.5);
+            text-indent: .5em;
+            vertical-align: middle;
+            font-size: 1rem;
+            outline: none;
+        }
+
+        .footerInfo {
+            position: relative;
+            bottom: 1.5rem;
+            text-align: center;
+            color: #fff;
+            font-size: .6rem;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="wrap" class="flex-wrap flex-vertical">
+        <div class="userPasswordWrap">
+            <div class="userWrap">
+                <div class="icon-phone">
+                    <img src="./image/login-phone.png" alt="手机号" />
+                    <input type="number" id="phoneNumber" value="13112345678"/>
+                </div>
+            </div>
+            <div class="passwordWrap">登录</div>
+        </div>
+        <div class="footerInfo">零犀（北京）科技有限公司技术支持</div>
+    </div>
+</body>
+
+</html>
+<script type="text/javascript" src="script/api.js"></script>
+<script type="text/javascript" src="script/zepto.min.js"></script>
+<script type="text/javascript">
+    apiready = function() {
+      var winHeight = $(window).height();
+      api.setFrameAttr({
+          name: 'login',
+      });
+      $(document).ready(function() {
+          $('#wrap').css({
+              'width': $(window).width(),
+              'height': $(window).height()
+          });
+      })
+      $('.passwordWrap').on('click', function() {
+          var sMobile = $('#phoneNumber').val(); //手机号
+          if (sMobile.length != 11 || sMobile.length == '') {
+              alert("手机号码非11位");
+              $('#phoneNumber').focus();
+              return false;
+          }
+          if (!(/^1/.test(sMobile))) {
+              alert("手机号码格式不正确");
+              $('#phoneNumber').focus();
+              return false;
+          }
+          api.openFrame({
+              name: 'index',
+              url: './html/index.html',
+              rect: {
+                  x: 0,
+                  y: 0,
+                  w: 'auto',
+                  h: 'auto'
+              },
+              pageParam: {
+                  mobile: sMobile,
+                  winHeight:winHeight
+              },
+              reload:true,
+              animation: {
+                  type: "fade", //动画类型（详见动画类型常量）
+                  subType: "from_right", //动画子类型（详见动画子类型常量）
+                  duration: 300 //动画过渡时间，默认300毫秒
+              }
+          });
+          api.closeFrame({
+            name:'login'
+          })
+          // function getTimeStamp(){
+          //   timeStamp = new Date().getTime()
+          //   alert(timeStamp);
+          // }
+          // var jsfun = 'getTimeStamp();';
+          // api.execScript({
+          //     frameName: 'index',
+          //     script: jsfun
+          // });
+
+          // $.ajax({
+          //     url: '?phoneNumber=' + sMobile,
+          //     type: 'GET',
+          //     success: function(data) {
+          //         if (data.success) {
+          //             //添加跳转至index.html
+          //             api.openFrame({
+          //                 name: '南航智能客服',
+          //                 url: './html/index.html',
+          //                 rect: {
+          //                     x: 0,
+          //                     y: 0,
+          //                     w: 'auto',
+          //                     h: 'auto'
+          //                 },
+          //                 pageParam: {
+          //                     mobile: sMobile
+          //                 }
+          //             });
+          //         } else {
+          //
+          //         }
+          //     },
+          //     error: function() {
+          //         alert('服务器异常，请联系管理员');
+          //     }
+          // })
+      })
+    }
+</script>

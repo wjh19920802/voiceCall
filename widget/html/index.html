@@ -1,0 +1,597 @@
+<!doctype html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="maximum-scale=1.0,minimum-scale=1.0,user-scalable=0,width=device-width,initial-scale=1.0" />
+    <meta name="format-detection" content="telephone=no,email=no,date=no,address=no">
+    <title>南航智能客服</title>
+    <link rel="stylesheet" type="text/css" href="../css/api.css" />
+    <link rel="stylesheet" type="text/css" href="../css/style.css" />
+    <style>
+
+    </style>
+</head>
+
+<body>
+    <div id="wrap" class="flex-wrap flex-vertical">
+        <header id="header">
+            <div class="headerContent">
+                <div class="backLogin">
+                    <img src="../image/nanhang_03.png" alt="返回" />
+                </div>
+                <div class="imgWrap">
+                    <img src="../image/nanhang_06.png" alt="智能客服" />
+                </div>
+                <div class="labaOnOff">
+                    <img src="../image/labaon.png" alt="语音开" id="labaOn" />
+                    <img src="../image/labaoff.png" alt="语音关" id="labaOff" style="display:none;" />
+                </div>
+            </div>
+        </header>
+        <div id="main" class="flex-con">
+            <audio id="dialogueResponse" src=""></audio>
+            <div class="contentWrap">
+                <div class="leftContent">
+                    <p class="contentDetail">尊敬的 <span id="userPhone"></span> 客户您好，这里是南航智能客服，请问有什么可以帮您？</p>
+                </div>
+            </div>
+        </div>
+        <div id="footer" class="border-t">
+            <div class="footerContent">
+                <div class="keyCode">
+                    <div>
+                        <img src="../image/nanhang_27.png" alt="键盘" id="imgKeyboard" />
+                        <img src="../image/nanhang_14.png" alt="麦克" id="imgMic" style="display:none;" />
+                    </div>
+                </div>
+                <div id="inputWrap">
+                    <input id="keyboardInput" type="text" />
+                    <button id="sendOut">发送</button>
+                </div>
+                <div class="imgWrap">
+                    <img src="../image/nanhang_23.png" alt="麦克风" />
+                </div>
+                <div class="startRecord">
+                    <div class="closeRecords">
+                        <img src="../image/nanhang_17.png" alt="取消" id="upMoveClose" />
+                        <span>上滑 取消发送</span>
+                    </div>
+                    <div class="bowen">
+                        <div class="bowenOne"></div>
+                        <div class="bowenTwo"></div>
+                        <div class="bowenThree"></div>
+                    </div>
+                    <div class="circle circleSm"></div>
+                    <div class="circle circleMd"></div>
+                    <div class="circle circleBg"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+<script type="text/javascript" src="../script/api.js"></script>
+<script type="text/javascript" src="../script/zepto.min.js"></script>
+<!-- <script type="text/javascript" src="../script/zepto.fx.js"></script> -->
+<script type="text/javascript">
+    apiready = function() {
+        api.setFrameAttr({
+            name: 'index',
+        });
+        var bvRecognizer = api.require('bvRecognizer');
+        var dialogBox = api.require('dialogBox');
+        var flag = false; //标示 语音识别是否完成
+        var startTime; //touchstart时间
+        var endTime; //touchend时间
+        var selfContent = '';
+        var posStart = 0; //初始化起点坐标
+        var posEnd = 0; //初始化终点坐标
+        var posMove = 0; //初始化滑动坐标
+        var keyCodeOnOff = false;
+        var keyCode = $api.dom('.keyCode');
+        var keyboardInput = $api.byId('keyboardInput');
+        var inputWrap = $api.byId('inputWrap');
+        var microphone = $api.dom('#footer .imgWrap');
+        var imgKeyboard = $api.byId('imgKeyboard');
+        var imgMic = $api.byId('imgMic');
+        var autoPlay = true;
+        //手机号
+        var mobile = api.pageParam.mobile;
+        var winHeight = api.pageParam.winHeight;
+        var timeStamp = new Date().getTime();
+        $('#userPhone').html(mobile);
+        //欢迎语自动播报
+        if (autoPlay == true) {
+            var voiceContent = '您好，我是南航小南，请问有什么可以帮您?';
+            $('#dialogueResponse').attr('src', 'http://tsn.baidu.com/text2audio?lan=zh&ctp=1&cuid=abcdxxx&tok=24.6444ff823e52f0598b6a1e149588ec88.2592000.1532894609.282335-11457266&tex=' + voiceContent +
+                '&vol=9&per=0&spd=5&pit=5');
+            $('#dialogueResponse')[0].play();
+        }
+
+        $('.keyCode').bind('click', function(e) {
+            o.scrollToTop();
+            e.stopPropagation;
+            if (keyCodeOnOff) {
+                $('#keyboardInput').blur();
+            } else {
+                inputWrap.style.display = 'inline-block';
+                $('#keyboardInput').focus();
+            }
+        });
+        $(window).resize(function() {
+            var thisHeight = $(this).height();
+            if (winHeight - thisHeight > 50) {
+                //当软键盘弹出，在这里面操作
+                microphone.style.display = 'none';
+                imgKeyboard.style.display = 'none';
+                imgMic.style.display = 'inline-block';
+                keyCodeOnOff = true;
+                // o.scrollToTop();
+            } else {
+                //当软键盘收起，在此处操作
+                inputWrap.style.display = 'none';
+                imgMic.style.display = 'none';
+                imgKeyboard.style.display = 'inline-block';
+                microphone.style.display = 'block';
+                keyCodeOnOff = false;
+            }
+        });
+        //返回
+        $('.backLogin').bind('click', function() {
+                // keyboardInput.focus();
+                var s = setInterval(function() {
+                    var windowH = $(window).height();
+                    if (winHeight - windowH < 50) {
+                        api.openFrame({
+                            url: '../login.html',
+                            rect: {
+                                x: 0,
+                                y: 0,
+                                w: 'auto',
+                                h: 'auto'
+                            },
+                            // reload: true,
+                            animation: {
+                                type: "fade", //动画类型（详见动画类型常量）
+                                subType: "from_right", //动画子类型（详见动画子类型常量）
+                                duration: 300 //动画过渡时间，默认300毫秒
+                            }
+                        });
+                        api.closeFrame({
+                            name: 'index'
+                        })
+                        clearInterval(s);
+                    }
+                }, 50)
+            })
+            //语音开关。
+        $('.labaOnOff').on('click', function() {
+            if ($(this).find('#labaOff').css('display') == 'none') {
+                //语音开关关闭
+                $(this).find('#labaOn').hide();
+                $(this).find('#labaOff').show();
+                autoPlay = false;
+                // $('#dialogueResponse')[0].pause();
+            } else {
+                // 语音开关开启
+                $(this).find('#labaOff').hide();
+                $(this).find('#labaOn').show();
+                autoPlay = true;
+            }
+        })
+
+        //发送
+        $('#sendOut').bind('click', function() {
+                var content = $('#keyboardInput').val();
+                if (content.trim() !== '') {
+                    o.createEle('.contentWrap', 'right', content);
+                    o.scrollToTop();
+                    $('#keyboardInput').attr('type', 'text');
+                    $('#keyboardInput').val('');
+                    o.getDialogue(content);
+                }
+            })
+            // 手指按下 开始录音
+        $('.imgWrap').bind('touchstart', function(event) {
+            event.preventDefault(); //阻止浏览器默认行为
+            // $('#dialogueResponse')[0].pause();
+            o.scrollToTop();
+            posStart = 0;
+            posStart = event.touches[0].pageY; //获取起点坐标
+            startTime = new Date().getTime();
+            $('.startRecord').addClass('longClickMic');
+            $('.keyCode>div').hide();
+            bvRecognizer.startListening({ //开始录音
+                // infile: 'fs://outfile.pcm',
+                outfile: 'fs://outfile.pcm',
+                VadEndPoint: 0,
+                language: 'cmn-Hans-CN',
+            }, function(ret) {
+                if (ret.status) { //识别成功
+                    flag = true;
+                    selfContent = ret.result;
+                }
+            });
+        });
+        //手指移动
+        $('.imgWrap').bind("touchmove", function(event) {
+            event.preventDefault(); //阻止浏览器默认行为
+            posMove = 0;
+            posMove = event.targetTouches[0].pageY; //获取滑动实时坐标
+            if (Math.abs(posStart - posMove) > 50) {
+                $('#upMoveClose').show();
+            } else {
+                $('#upMoveClose').hide();
+            }
+        });
+
+        //手指离开按钮
+        $('.imgWrap').bind('touchend', function(event) {
+            event.preventDefault();
+            endTime = new Date().getTime();
+            posEnd = 0;
+            posEnd = event.changedTouches[0].pageY; //获取终点坐标
+            $('.startRecord').removeClass('longClickMic');
+            $('.keyCode>div').show();
+            if (endTime - startTime < 1000 || Math.abs(posStart - posEnd) > 50) { //排除点击录音按钮的情况
+                // 滑动取消时执行
+                bvRecognizer.stopListening();
+                $('.startRecord').removeClass('longClickMic');
+                $('.keyCode>div').show();
+                $('#upMoveClose').hide();
+            } else {
+                var s = setInterval(function() { //轮询录音是否识别成功
+                    if (flag == true) {
+                        o.createEle('.contentWrap', 'right', selfContent); //添加元素
+                        o.scrollToTop();
+                        o.getDialogue(selfContent);
+                        bvRecognizer.stopListening();
+                        flag = false;
+                        clearInterval(s);
+                    }
+                }, 50)
+            }
+        });
+
+        //点击航班信息
+        $(document).on('click', '.clickItem', function() {
+            var i = $(this).attr('data-index');
+            var str = '第' + i + '个';
+            o.getDialogue(str);
+        })
+
+        var o = {
+            //创建对话元素
+            createEle: function(selector, direction, content) {
+                $(selector).append('<div class="' + direction + 'Content"><div class="contentDetail">' + content + '</div></div>')
+            },
+            //滚动到最底部
+            scrollToTop: function() {
+                var height = $('#wrap')[0].scrollHeight;
+                window.scrollTo(0, height);
+            },
+            //获取对话内容
+            getDialogue: function(content) {
+                $.ajax({
+                    type: 'GET',
+                    url: 'http://39.104.99.93:8644/dialogue/process?sessionId=' + mobile + timeStamp + '&workspaceId=2&query=' + content + '&userId=' + mobile,
+                    success: function(data) {
+                        selfContent = '';
+                        try {
+                            var obj = JSON.parse(data);
+                            var str = ''; //显示的字符串内容
+                            var voiceContent = obj.voiceContent; //语音播报内容
+                            if (autoPlay == true && data.length > 0) {
+                                $('#dialogueResponse').attr('src', 'http://tsn.baidu.com/text2audio?lan=zh&ctp=1&cuid=abcdxxx&tok=24.6444ff823e52f0598b6a1e149588ec88.2592000.1532894609.282335-11457266&tex=' + voiceContent +
+                                    '&vol=9&per=0&spd=5&pit=5');
+                                $('#dialogueResponse')[0].play();
+                            };
+                            var finalArr = []; //存放多条航班信息的数组
+                            var textContent = obj.textContent; //用于页面显示的待处理文本
+
+                            if (textContent.indexOf("@@message@@") > -1) {   //弹窗显示message
+                                str = textContent.replace(/@@message@@/, "");
+                                dialogBox.alert({
+                                    texts: {
+                                        title: '支付链接',
+                                        content: 'www.pay.nanhang.com',
+                                        leftBtnTitle: '前往支付',
+                                        rightBtnTitle: '取消'
+                                    },
+                                    styles: {
+                                        bg: '#fff',
+                                        w: 300,
+                                        title: {
+                                            marginT: 10,
+                                            titleSize: 14,
+                                            titleColor: '#000'
+                                        },
+                                        content: {
+                                            color: '#4da6ff',
+                                            size: 14
+                                        },
+                                        left: {
+                                            marginB: 7,
+                                            marginL: 20,
+                                            w: 130,
+                                            h: 35,
+                                            corner: 2,
+                                            bg: '#0a80e6',
+                                            color: '#fff',
+                                            size: 12
+                                        },
+                                        right: {
+                                            marginB: 7,
+                                            marginL: 10,
+                                            w: 130,
+                                            h: 35,
+                                            corner: 2,
+                                            color: '#000',
+                                            bg: '#ddd',
+                                            size: 12
+                                        }
+                                    }
+                                }, function(ret) {
+                                    if (ret.eventType == 'left') {
+                                        dialogBox.close();
+                                        dialogBox.alert({
+                                            texts: {
+                                                content: '支付成功',
+                                                leftBtnTitle: '确定'
+                                            },
+                                            styles: {
+                                                bg: '#fff',
+                                                w: 300,
+                                                content: {
+                                                    color: '#000',
+                                                    size: 16
+                                                },
+                                                left: {
+                                                    marginB: 7,
+                                                    marginL: 85,
+                                                    w: 130,
+                                                    h: 35,
+                                                    corner: 2,
+                                                    bg: '#0a80e6',
+                                                    color: '#fff',
+                                                    size: 12
+                                                }
+                                            }
+                                        }, function(ret) {
+                                            if (ret.eventType == 'left') {
+                                                dialogBox.close();
+                                                var gaiqianSuccess =
+                                                    '<div class="gqcg">' +
+                                                    '<div class="place"></div>' +
+                                                    '<div class="temperature"></div>' +
+                                                    '<div class="gqcgTitle"></div>' +
+                                                    '<div class="reminder"></div>' +
+                                                    '<img src="../image/gaiqianchenggong.png" alt="改签成功" width="100%" />' +
+                                                    '</div>'
+                                                $('.contentWrap').append(gaiqianSuccess);
+                                                if (autoPlay == true) {
+                                                    var voiceContent = '您已改签成功，请关注目的地天气情况';
+                                                    $('#dialogueResponse').attr('src',
+                                                        'http://tsn.baidu.com/text2audio?lan=zh&ctp=1&cuid=abcdxxx&tok=24.6444ff823e52f0598b6a1e149588ec88.2592000.1532894609.282335-11457266&tex=' +
+                                                        voiceContent +
+                                                        '&vol=9&per=0&spd=5&pit=5');
+                                                    $('#dialogueResponse')[0].play();
+                                                }
+                                                setTimeout(function() {
+                                                    o.scrollToTop();
+                                                }, 500);
+                                            }
+                                        })
+                                    } else if (ret.eventType == 'right') {
+                                        dialogBox.close();
+                                    }
+                                });
+                                setTimeout(function() {
+                                    dialogBox.close({
+                                        dialogName: 'alert'
+                                    });
+                                }, 30000)
+                                o.createEle('.contentWrap', 'left', str); //创建文本
+                            } else if (textContent.indexOf("@@digital@@") > -1) {   //输入身份证 弹出数字软键盘
+                                str = textContent.replace(/@@digital@@/, "");
+                                $('#keyboardInput').attr('type', 'number');
+                                inputWrap.style.display = 'inline-block';
+                                $('#keyboardInput').focus();
+                                o.createEle('.contentWrap', 'left', str); //创建文本
+                            } else if (textContent.indexOf("@@link@@") > -1) {    //生成卡片并且可点击
+                                finalArr = textContent.split('@@link@@');
+                                var i = 0;
+                                finalArr.forEach(function(item, index) {
+                                    if (index == 0) {
+                                        str = '<p>' + item + '</p>';
+                                        o.createEle('.contentWrap', 'left', str); //创建文本
+                                    } else {
+                                        if (item.length > 1) {
+                                            i = i + 1;
+                                            str = '<p class="clickItem" data-index="' + i + '">' + item + '</p>';
+                                            $('<div class="leftContent leftClick">' + str + '</div>').appendTo('.contentWrap');
+                                        }
+                                    }
+                                })
+                            } else if(textContent.indexOf("@@card@@") > -1) {  //生成卡片 不能点击
+                                finalArr = textContent.split('@@card@@');
+                                var i = 0;
+                                finalArr.forEach(function(item, index) {
+                                    if (index == 0) {
+                                        str = '<p>' + item + '</p>';
+                                        o.createEle('.contentWrap', 'left', str); //创建文本
+                                    } else {
+                                        if (item.length > 1) {
+                                          i = i + 1;
+                                          str = '<p class="cardItem" data-index="' + i + '">' + item + '</p>';
+                                          $('<div class="leftContent leftCard">' + str + '</div>').appendTo('.contentWrap');
+                                        }
+                                    }
+                                })
+                            } else {
+                                str = textContent.replace(' ','');
+                                o.createEle('.contentWrap', 'left', str); //创建文本
+                            }
+                            setTimeout(function() {
+                                o.scrollToTop(); //滚动到底部
+                            }, 500)
+                        } catch (err) {
+                            if (data.indexOf("@@message@@") > -1) {
+                                data = data.replace(/@@message@@/, "");
+                                dialogBox.alert({
+                                    texts: {
+                                        title: '支付链接',
+                                        content: 'www.pay.nanhang.com',
+                                        leftBtnTitle: '前往支付',
+                                        rightBtnTitle: '取消'
+                                    },
+                                    styles: {
+                                        bg: '#fff',
+                                        w: 300,
+                                        title: {
+                                            marginT: 10,
+                                            titleSize: 14,
+                                            titleColor: '#000'
+                                        },
+                                        content: {
+                                            color: '#4da6ff',
+                                            size: 14
+                                        },
+                                        left: {
+                                            marginB: 7,
+                                            marginL: 20,
+                                            w: 130,
+                                            h: 35,
+                                            corner: 2,
+                                            bg: '#0a80e6',
+                                            color: '#fff',
+                                            size: 12
+                                        },
+                                        right: {
+                                            marginB: 7,
+                                            marginL: 10,
+                                            w: 130,
+                                            h: 35,
+                                            corner: 2,
+                                            color: '#000',
+                                            bg: '#ddd',
+                                            size: 12
+                                        }
+                                    }
+                                }, function(ret) {
+                                    if (ret.eventType == 'left') {
+                                        dialogBox.close();
+                                        dialogBox.alert({
+                                            texts: {
+                                                content: '支付成功',
+                                                leftBtnTitle: '确定'
+                                            },
+                                            styles: {
+                                                bg: '#fff',
+                                                w: 300,
+                                                content: {
+                                                    color: '#000',
+                                                    size: 16
+                                                },
+                                                left: {
+                                                    marginB: 7,
+                                                    marginL: 85,
+                                                    w: 130,
+                                                    h: 35,
+                                                    corner: 2,
+                                                    bg: '#0a80e6',
+                                                    color: '#fff',
+                                                    size: 12
+                                                }
+                                            }
+                                        }, function(ret) {
+                                            if (ret.eventType == 'left') {
+                                                dialogBox.close();
+                                                var gaiqianSuccess =
+                                                    '<div class="gqcg">' +
+                                                    '<div class="place"></div>' +
+                                                    '<div class="temperature"></div>' +
+                                                    '<div class="gqcgTitle"></div>' +
+                                                    '<div class="reminder"></div>' +
+                                                    '<img src="../image/gaiqianchenggong.png" alt="改签成功" width="100%" />' +
+                                                    '</div>'
+                                                $('.contentWrap').append(gaiqianSuccess);
+                                                o.scrollToTop();
+                                            }
+                                        })
+                                    } else if (ret.eventType == 'right') {
+                                        dialogBox.close();
+                                    }
+                                });
+                                setTimeout(function() {
+                                    dialogBox.close({
+                                        dialogName: 'alert'
+                                    });
+                                }, 30000)
+                            } else if (data.indexOf("@@digital@@") > -1) {
+                                data = data.replace(/@@digital@@/, "");
+                                $('#keyboardInput').attr('type', 'number');
+                                inputWrap.style.display = 'inline-block';
+                                $('#keyboardInput').focus();
+                            };
+                            o.createEle('.contentWrap', 'left', data); //创建文本
+                            o.scrollToTop(); //滚动到底部
+                            if (autoPlay == true && data.length > 0) {
+                                $('#dialogueResponse').attr('src', 'http://tsn.baidu.com/text2audio?lan=zh&ctp=1&cuid=abcdxxx&tok=24.6444ff823e52f0598b6a1e149588ec88.2592000.1532894609.282335-11457266&tex=' + data +
+                                    '&vol=9&per=0&spd=5&pit=5');
+                                $('#dialogueResponse')[0].play();
+                            }
+                        }
+                    },
+                    error: function(xhr, type) {
+                        var text = '请检查您的网络!';
+                        o.showAlert(text);
+                        setTimeout(function() {
+                            dialogBox.close({
+                                dialogName: 'alert'
+                            });
+                        }, 3000)
+                        $('.startRecord').removeClass('longClickMic');
+                        $('.keyCode>div').show();
+                        $('#upMoveClose').hide();
+                    }
+                })
+            },
+            showAlert: function(text, flag) {
+                dialogBox.alert({
+                    texts: {
+                        title: '提示',
+                        content: text,
+                        rightBtnTitle: '确认'
+                    },
+                    styles: {
+                        bg: '#fff',
+                        w: 300,
+                        content: {
+                            color: '#000',
+                            size: 14
+                        },
+                        right: {
+                            marginB: 7,
+                            marginL: 85,
+                            w: 130,
+                            h: 35,
+                            corner: 2,
+                            bg: '#381d8f',
+                            color: '#fff',
+                            size: 12
+                        }
+                    }
+                }, function(ret) {
+                    if (ret.eventType == 'right') { //弹出键盘
+                        dialogBox.close({
+                            dialogName: 'alert'
+                        });
+                    }
+                });
+            }
+        }
+    };
+</script>
+
+</html>

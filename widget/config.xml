@@ -1,0 +1,70 @@
+<widget id="A6085608843140" version="0.0.1">
+
+    <meta-data name="com.baidu.speech.APP_ID" value="9138814"/>
+    <meta-data name="com.baidu.speech.API_KEY" value="83klPIHkmGhZloxyVSls7OHv"/>
+    <meta-data name="com.baidu.speech.SECRET_KEY" value="4cb67125a0b40298cb6ed9e0c7c35c36"/>
+    <feature name="bvRecognizer">
+      <param name="ios_sr_appid" value="9138814"/>
+      <param name="ios_sr_apikey" value="83klPIHkmGhZloxyVSls7OHv"/>
+      <param name="ios_sr_secretkey" value="4cb67125a0b40298cb6ed9e0c7c35c36"/>
+    </feature>
+
+    <name>南航小南</name>
+
+    <!-- <description>
+
+        Example For APICloud.
+
+    </description>
+
+    <author email="developer@apicloud.com" href="http://www.apicloud.com">
+
+        Developer
+
+    </author> -->
+
+    <content src="login.html"/>
+
+    <access origin="*"/>
+
+    <preference name="pageBounce" value="false"/>
+
+    <preference name="appBackground" value="rgba(0,0,0,0.0)"/>
+
+    <preference name="windowBackground" value="rgba(0,0,0,0.0)"/>
+
+    <preference name="frameBackgroundColor" value="rgba(0,0,0,0.0)"/>
+
+    <preference name="hScrollBarEnabled" value="false"/>
+
+    <preference name="vScrollBarEnabled" value="false"/>
+
+    <preference name="autoLaunch" value="true"/>
+
+    <preference name="fullScreen" value="false"/>
+
+    <preference name="autoUpdate" value="true"/>
+
+    <preference name="smartUpdate" value="false"/>
+
+    <preference name="debug" value="true"/>
+
+    <preference name="statusBarAppearance" value="false"/>
+
+    <permission name="readPhoneState"/>
+
+    <permission name="camera"/>
+
+    <permission name="record"/>
+
+    <permission name="location"/>
+
+    <permission name="fileSystem"/>
+
+    <permission name="internet"/>
+
+    <permission name="bootCompleted"/>
+
+    <permission name="hardware"/>
+
+</widget>
